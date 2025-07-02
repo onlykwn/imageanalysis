@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Face Classifier & Trainer</title>   
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+</head>
+<body>
+<br>
+  <!--  Header is separate and centered -->
+  <div class="header">
+    <h1>Face Classifier & Data Uploader</h1>
+  </div>
+  {% if status %}
+  <div class="status-box">{{ status }}</div>
+{% endif %}
+<br>
+  <center><div class="container">
+    <!-- Upload new class images -->
+    <form action="/add_class" method="post" enctype="multipart/form-data">
+      <h2>ADD IMAGES FOR NEW CLASS</h2>
+      <input type="text" name="class_name" placeholder="Enter class name (e.g. Jennie)" required />
+      <input type="file" name="files" accept="image/*" multiple required />
+      <button type="submit">Upload Images</button>
+    </form><br>
+
+   <form action="/retrain" method="post" onsubmit="showLoading()">
+  <button type="submit">Retrain Model</button>
+</form>
+
+<!-- Loading Indicator -->
+<div id="loading" class="status-box" style="display:none;">
+  🔄 Retraining model... Please wait.
+</div>
+
+<!-- Success message -->
+{% if retrain_status %}
+  <div class="status-box">{{ retrain_status }}</div>
+{% endif %}
+
+    <!-- Predict face -->
+    <form action="/predict" method="post" enctype="multipart/form-data">
+      <h2>PREDICT A FACE</h2>
+<div class="input-preview-wrapper">
+  <input type="file" name="file" accept="image/*" required onchange="previewSelectedImage(event)" />
+  <img id="preview-thumb" onclick="showImagePopup()" />
+</div>
+      <button type="submit">Predict</button>
+    </form>
+   {% if prediction %}
+<div class="modal {{ 'show' if prediction }}">
+  <div class="modal-content">
+    <span class="close">&times;</span><br><br>
+    <div class="predicted">Prediction: {{ prediction }}</div>
+    <img src="{{ face_path }}" alt="Predicted Face">
+  </div>
+</div>
+
+
+</div>
+{% endif %}
+  </div>
+</center>
+  <script>
+  // Get modal and close elements
+  const modal = document.querySelector('.modal');
+  const closeBtn = document.querySelector('.close');
+
+  // Close modal on click
+  if (closeBtn && modal) {
+    closeBtn.addEventListener('click', () => {
+      modal.classList.remove('show');
+    });
+  }
+
+  // Optional: close modal if clicking outside content
+  window.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.classList.remove('show');
+    }
+  });
+</script>
+<script>
+  setTimeout(() => {
+    const statusBox = document.querySelector('.status-box');
+    if (statusBox) statusBox.style.display = 'none';
+  }, 2000); // fades out after 2 sec
+</script>
+
+<div id="image-popup-modal" class="image-modal">
+  <div class="image-modal-content">
+    <span class="close" onclick="closeImagePopup()">&times;</span>
+    <img id="popup-img" style="max-height: 80vh; border-radius: 10px;" />
+  </div>
+</div>
+
+<script>
+  function previewSelectedImage(event) {
+    const input = event.target;
+    const preview = document.getElementById("preview-thumb");
+    const file = input.files[0];
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        preview.src = e.target.result;
+        preview.style.display = "inline-block";
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function showImagePopup() {
+    const modal = document.getElementById("image-popup-modal");
+    const preview = document.getElementById("preview-thumb");
+    const popupImg = document.getElementById("popup-img");
+    popupImg.src = preview.src;
+    modal.classList.add("show");
+  }
+
+  function closeImagePopup() {
+    document.getElementById("image-popup-modal").classList.remove("show");
+  }
+</script>
+
+<script>
+  function showLoading() {
+    document.getElementById("loading").style.display = "block";
+  }
+
+  // Optional: auto-hide other status boxes
+  setTimeout(() => {
+    const statusBox = document.querySelectorAll('.status-box');
+    statusBox.forEach(b => b.style.display = 'none');
+  }, 3000);
+</script>
+
+</body>
+</html>
